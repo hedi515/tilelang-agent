@@ -10,18 +10,18 @@
 
 | 名称 | 类型 | 功能 | 地址 |
 |---|---|---|---|
-| node.js 配置安装 | shell 脚本 | 在算力平台机器上一键安装 node.js | scripts/install_node_js.sh |
-| opencode 安装 | shell 命令 | 安装 openCode | `npm install -g opencode-ai` |
-| API KEY 配置 | shell 脚本 | opencode 火山 GLM API KEY 配置 | scripts/opencode_apikey_config.sh |
+| node.js 配置安装 | shell 脚本 | 在算力平台机器上一键安装 node.js | [scripts/install_node.sh](scripts/install_node.sh) |
+| opencode 安装 | shell 命令 | 安装 opencode | `npm install -g opencode-ai` |
+| API KEY 配置 | shell 脚本 | opencode 火山 GLM API KEY 配置 | [scripts/opencode_apikey_config.sh](scripts/opencode_apikey_config.sh) |
 
-如果需要更详细步骤，可查看 guide/opencode_installation_guide.md
+如果需要更详细步骤，可查看 [opencode 云服务器安装指南](guide/opencode_installation_guide.md)    
 opencode 基础能力，可以参考 https://opencode.ai/docs/zh-cn
 
 #### 其他脚本
 
 | 名称 | 类型 | 功能 | 地址 |
 |---|---|---|---|
-| node.js 配置安装（aicodemirror 体提供）| shell 脚本 | 一键安装 node.js | `curl -fsSL https://download.aicodemirror.com/env_deploy/env-install.sh | bash` |
+| node.js 配置安装（aicodemirror 体提供）| shell 脚本 | 一键安装 node.js | `curl -fsSL https://download.aicodemirror.com/env_deploy/env-install.sh \| bash` |
 
 
 ### 其他配置
@@ -32,11 +32,12 @@ opencode 基础能力，可以参考 https://opencode.ai/docs/zh-cn
 
 ## 开发
 
-### 挂载 tilelang-agent
+### 配置代码仓库
 
-| 名称 | 类型 | 功能 | 地址 |
+| 名称 | 类型 | 功能 | 内容 |
 |---|---|---|---|
-| 挂载 tilelang-agent | 提示词 | 后续开发中用到的 SKILL 建议都归档到 tilelang-agent 中，在开发前直接挂载一下即可运用 tilelang-agent 进行开发。| [操作指导](guide/tile_agent_ln.md) |
+| 安装 tilelang-ascend | 提示词 | 在算力平台环境上一键安装 tilelang-ascend | `帮我安装 tilelang-ascend` |
+| 挂载 tilelang-agent | 提示词 | 在 tilelang-ascend 项目挂载 tilelang-agent | `帮我挂载这个仓库` |
 
 ### 基础 SKILL 配置
 
@@ -44,7 +45,8 @@ opencode 基础能力，可以参考 https://opencode.ai/docs/zh-cn
 |---|---|---|---|
 | skill-creator | 创建 SKILL | https://github.com/anthropics/skills/tree/main/skills/skill-creator | 可以把常用的、总结好的提示词转换成 SKILL |
 | requesting-code-review | 创建代码 review | https://github.com/obra/superpowers | 提交代码前，建议先用代码审查一编 |
-| tilelang-install-skill | 拉取 tielang 代码仓并编译 | .agents/skills/tilelang-install-skill | 可在算力平台环境上一键安装 tilelang |
+| tilelang-install-skill | 拉取 tielang 代码仓并编译 | [.agents/skills/tilelang-install-skill](.agents/skills/tilelang-install-skill) | 可在算力平台环境上一键安装 tilelang |
+| setup-tilelang-agent | 挂载 tilelang-agent | [.agents/skills/setup-tilelang-agent](.agents/skills/setup-tilelang-agent) | 可以把 tilelang-agent 子目录挂载到 tilelang-ascend 项目 |
 
 更多 SKILL 能力可以参考 https://skills.sh/
 
@@ -52,7 +54,7 @@ opencode 基础能力，可以参考 https://opencode.ai/docs/zh-cn
 
 | 名称 | 功能 | 地址 | 用处 |
 |---|---|---|---|
-| tilelang-debug-helper | 调试 SKILL | .agens/skills/tilelang-debug-helper | 对给出Example代码进行调试 |
+| tilelang-debug-helper | 调试 SKILL | [tilelang-agent/.agents/skills/tilelang-debug-helper](tilelang-agent/.agents/skills/tilelang-debug-helper) | 对给出Example代码进行调试 |
 | 欢迎大家持续补充。。 |  |  |  |
 
 

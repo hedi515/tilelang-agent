@@ -6,7 +6,7 @@
 
 opencode 安装过程包含以下三个步骤：
 
-1. 执行 `install_node_js.sh` - 安装 Node.js 环境
+1. 执行 `install_node.sh` - 安装 Node.js 环境
 2. 执行 `npm install -g opencode-ai` - 安装 opencode
 3. 执行 `opencode_apikey_config.sh` - 配置 API Key
 
@@ -14,7 +14,7 @@ opencode 安装过程包含以下三个步骤：
 
 ### 1. 安装 Node.js
 
-`install_node_js.sh` 脚本会自动安装 Node.js 环境。
+`install_node.sh` 脚本会自动安装 Node.js 环境。
 
 **功能说明：**
 - 使用 nvm (Node Version Manager) 安装 Node.js
@@ -25,7 +25,7 @@ opencode 安装过程包含以下三个步骤：
 
 **执行命令：**
 ```bash
-bash ai-tile/install_node_js.sh
+bash ai-tile/install_node.sh
 ```
 
 **执行后提示：**
@@ -78,7 +78,7 @@ bash ai-tile/opencode_apikey_config.sh
 
 ```bash
 # 1. 安装 Node.js
-bash tilelang-ascend/install_node_js.sh
+bash tilelang-ascend/install_node.sh
 
 # 2. 加载 nvm 环境（如需要）
 export NVM_DIR="$HOME/.nvm"
