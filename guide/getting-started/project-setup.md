@@ -58,7 +58,39 @@ lrwxrwxrwx  1 developer developer    45 Feb 28 16:22 .agents -> /mnt/workspace/a
 - 第一个字符应为 `l`（表示符号链接）
 - 箭头 `->` 后应指向正确的源路径
 
-## 步骤 5: 确认成功
+## 步骤 5: 挂载 AGENTS.md（可选）
+
+为了在 tilelang-ascend 项目中访问 TileLang 架构文档，可以将 AGENTS.md 软链接到项目中：
+
+```bash
+# 创建 docs 目录（如果不存在）
+mkdir -p /path/to/tilelang-ascend/docs
+
+# 创建软链接
+ln -s /path/to/tilelang-agent/tilelang-ascend-docs/AGENTS.md \
+      /path/to/tilelang-ascend/docs/AGENTS.md
+```
+
+**示例**:
+```bash
+mkdir -p /mnt/workspace/ai-test/tilelang-ascend/docs
+ln -s /mnt/workspace/ai-test/tilelang-agent/tilelang-ascend-docs/AGENTS.md \
+      /mnt/workspace/ai-test/tilelang-ascend/docs/AGENTS.md
+```
+
+**验证**:
+```bash
+ls -la /mnt/workspace/ai-test/tilelang-ascend/docs/ | grep AGENTS.md
+```
+
+**预期输出**:
+```
+lrwxrwxrwx  1 developer developer    65 Mar  2 15:00 AGENTS.md -> /mnt/workspace/ai-test/tilelang-agent/tilelang-ascend-docs/AGENTS.md
+```
+
+这样在 tilelang-ascend 项目中就可以通过 `docs/AGENTS.md` 访问架构文档。
+
+## 步骤 6: 确认成功
 
 如果验证命令显示正确的软链接信息，则说明配置成功。AI agent 现在可以通过 tilelang-ascend 项目访问 tilelang-agent 中定义的自定义技能。
 
