@@ -3,7 +3,7 @@
 1. 初次运行时，先执行备份
 
 ```shell
-sudo bash backup-home.sh
+sudo bash tilelang-agent/scripts/backup-home.sh
 ```
 
 **注意**：有些内容不会被备份，不会备份的内容在脚本中的排除列表 `EXCLUDE_LIST` 里
@@ -11,7 +11,7 @@ sudo bash backup-home.sh
 2. 建立软连接到备份的目录
 
 ```shell
-sudo bash init-home.sh
+sudo bash tilelang-agent/scripts/init-home.sh
 ```
 
 **注意**：会被链接过去的目录/子目录/文件，配置在脚本中的 `MAPPED_PATHS` 中，可以自行修改

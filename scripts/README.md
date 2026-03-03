@@ -1,21 +1,70 @@
 # 安装脚本
 
-本目录包含 TileLang 开发环境配置脚本。
+本目录包含 TileLang Agent 的环境配置脚本。
 
 ## 脚本列表
 
-### install_node.sh
+| 脚本名称 | 功能描述 | 使用场景 | 依赖 | 详细说明 |
+|---------|---------|---------|------|---------|
+| backup_home.sh | 首次备份容器家目录到持久化存储 | 首次运行容器后，手动执行一次备份 | bash, cp | 首次备份家目录，支持排除列表 |
+| init_home.sh | 容器启动时初始化 home 目录软链接 | 容器重启后恢复持久化配置 | bash, ln, chown | 创建软链接到持久化存储 |
+| install_node.sh | Node.js 自动安装 | 安装或升级 Node.js 环境 | curl, bash | 支持中国镜像，使用 nvm 安装 |
+| install_tilelang.sh | TileLang 安装 | 一键安装 TileLang 开发环境 | git, bash | 自动配置 GitHub 镜像加速 |
+| opencode_apikey_config.sh | OpenCode API Key 配置 | 配置 OpenCode 的 API Key 和模型端点 | bash | 交互式输入配置 |
 
-**功能**: 统一的 Node.js 安装脚本
+## 使用样例
 
-**特性**:
-- 自动检测网络环境，中国境内自动使用镜像
-- 支持 Linux 和 macOS
-- 使用 nvm 安装 Node.js 22
-- 最低版本要求：Node.js 18
-- 自动检测已安装版本，如版本过低则升级
+### 完整安装流程
 
-**使用方法**:
+```bash
+# 1. 安装 Node.js（自动检测网络环境）
+bash scripts/install_node.sh
+
+# 2. 加载 nvm 环境（如需要）
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# 3. 安装 OpenCode
+npm install -g opencode-ai
+
+# 4. 配置 API Key
+bash scripts/opencode_apikey_config.sh
+
+# 5. 备份 home 目录（首次）
+sudo bash scripts/backup_home.sh
+
+# 6. 初始化 home 目录软链接
+sudo bash scripts/init_home.sh
+```
+
+### 单独使用脚本
+
+#### backup_home.sh
+
+```bash
+# 首次备份家目录
+sudo bash scripts/backup_home.sh
+
+# 备份前需要修改脚本中的配置：
+# SOURCE_HOME="/home/developer"        # 源家目录
+# TARGET_HOME="/mnt/workspace/home"      # 目标持久化目录
+# EXCLUDE_LIST=("Ascend" "ascend")      # 排除列表
+```
+
+#### init_home.sh
+
+```bash
+# 容器重启后初始化 home 目录
+sudo bash scripts/init_home.sh
+
+# 初始化前需要修改脚本中的配置：
+# SOURCE_HOME="/home/developer"        # 源家目录
+# TARGET_HOME="/mnt/workspace/home"      # 目标持久化目录
+# MAPPED_PATHS=("agent" ".bashrc")      # 需要持久化的路径
+```
+
+#### install_node.sh
+
 ```bash
 # 自动检测网络环境
 bash scripts/install_node.sh
@@ -30,157 +79,246 @@ USE_CHINA_MIRROR=true bash scripts/install_node.sh
 bash scripts/install_node.sh --help
 ```
 
-**执行后提示**:
-如需在当前 shell 中使用 Node.js，请运行：
-```bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-```
+#### install_tilelang.sh
 
-或重启终端。
-
-### install_tilelang.sh
-
-**功能**: 在算力平台环境环境上一键安装 tilelang
-
-**特性**:
-- 自动配置 GitHub 镜像加速
-- 支持自定义仓库地址
-- 处理子模块依赖
-- 完整的安装流程验证
-
-**使用方法**:
 ```bash
 # 使用默认配置
 bash scripts/install_tilelang.sh
 
 # 指定仓库地址
-REPO_URL=git@github.com:your-repo/tilelang-ascend.git bash scripts/install_tilelang.sh
+bash scripts/install_tilelang.sh --repo git@github.com:your-repo/tilelang-ascend.git
+
+# 显示帮助信息
+bash scripts/install_tilelang.sh --help
 ```
 
-**配置项**:
-```bash
-MIRROR_URL="https://ghfast.top/https://github.com/"
-DEFAULT_REPO="git@github.com:jackwangc/ai-tile.git"
-PROJECT_DIR="ai-tile"
-```
-
-### opencode_apikey_config.sh
-
-**功能**: 配置 OpenCode 的 API Key
-
-**使用方法**:
-```bash
-bash scripts/opencode_apikey_config.sh
-# 按提示输入 API Key 和 END_POINT_ID
-```
-
-**交互输入示例**:
-```
-请输入 API Key:
-[输入您的 API Key]
-
-请输入END_POINT_ID (例如: ep-202620242022-123456):
-[输入您的 END_POINT_ID]
-```
-
-**配置文件位置**: `~/.config/opencode/opencode.json`
-
-### backup_home.sh
-
-**功能**: 首次备份 home 目录到持久化目录
-
-**使用方法**:
-```bash
-sudo bash scripts/backup_home.sh
-```
-
-**配置**: 修改脚本中的以下配置项
-```bash
-SOURCE_HOME="/home/developer"           # 当前容器内的家目录路径
-TARGET_HOME="/mnt/workspace/home"       # 持久化目标目录路径
-EXCLUDE_LIST=(                        # 不需要备份的文件/目录名
-    "Ascend"
-    "ascend"
-    "opensource"
-)
-```
-
-**注意**: 
-- 首次运行容器后手动执行一次
-- 有些内容不会被备份，配置在脚本中的排除列表 `EXCLUDE_LIST` 里
-
-### init_home.sh
-
-**功能**: 容器启动时初始化 home 目录软链接
-
-**使用方法**:
-```bash
-sudo bash scripts/init_home.sh
-```
-
-**配置**: 必须与 backup_home.sh 保持一致
-```bash
-SOURCE_HOME=" /home/developer"       # 当前容器内的家目录路径
-TARGET_HOME="/mnt/workspace/home"       # 持久化目标目录路径
-MAPPED_PATHS=(                       # 需要持久化的路径
-    "agent"
-    ".bashrc"
-    ".bash_aliases"
-    # ... 更多路径
-)
-```
-
-**注意**:
-- 需要先运行 backup_home.sh 进行首次备份
-- 每次重启后执行此脚本即可恢复配置
-- 有些文件/目录被占用，无法完全链接过去，比如 `.codearts-server`
-- 有些文件/目录在环境初始时并不存在，使用过程中才会创建，如果备份时没有，可以自行创建
-
-## 完整安装流程
-
-在云服务器初始化时，按顺序执行以下命令：
+#### opencode_apikey_config.sh
 
 ```bash
-# 1. 安装 Node.js
-bash scripts/install_node.sh
-
-# 2. 加载 nvm 环境（如需要）
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-# 3. 安装 opencode
-npm install -g opencode-ai
-
-# 4. 配置 API Key
+# 交互式配置
 bash scripts/opencode_apikey_config.sh
 
-# 5. 备份 home 目录（首次）
-sudo bash scripts/backup_home.sh
-
-# 6. 初始化 home 目录软链接
-sudo bash scripts/init_home.sh
+# 按提示输入：
+# 请输入 API Key: [your-api-key]
+# 请输入END_POINT_ID (例如: ep-202620242022-123456): [your-end-point-id]
 ```
 
-## 验证安装
+## 添加新脚本规范
 
-安装完成后，可以通过以下命令验证：
+### 1. 命名规范
+
+- 使用小写字母和下划线
+- 使用描述性名称，如 `install_python.sh`、`setup_env.sh`
+- 避免使用缩写，除非是通用缩写（如 `api`、`config`）
+
+**示例**:
+```
+✅ install_python.sh
+✅ setup_docker.sh
+✅ configure_git.sh
+
+❌ installpy.sh
+❌ setup-docker.sh
+❌ cfg_git.sh
+```
+
+### 2. 脚本头部
+
+每个脚本必须包含以下头部信息：
 
 ```bash
-# 检查 Node.js 版本
-node -v
-
-# 检查 npm 版本
-npm -v
-
-# 检查 opencode 版本
-opencode --version
+#!/bin/bash
+# ======================================================
+# 脚本简短描述（一行）
+# 详细说明（多行）：
+#   功能说明
+#   使用场景
+#   注意事项
+# 执行时机：首次/每次/按需
+# ======================================================
 ```
 
-## 注意事项
+**示例**:
+```bash
+#!/bin/bash
+# ======================================================
+# Python 环境安装脚本
+# 功能说明：
+#   自动检测 Python 版本，如未安装或版本过低则安装
+#   使用 pyenv 管理 Python 版本
+# 使用场景：
+#   首次配置开发环境
+#   升级 Python 版本
+# 注意事项：
+#   需要网络连接
+#   建议使用中国镜像加速
+# 执行时机：首次或按需
+# ======================================================
+```
 
-1. 确保 Node.js 版本 >= 18
-2. API Key 和 END_POINT_ID 需要提前准备好
-3. 安装过程中需要网络连接
-4. 建议使用 bash 执行脚本
-5. 中国网络环境建议使用 `--china` 参数
+### 3. 错误处理
+
+脚本必须包含错误处理：
+
+```bash
+set -e  # 遇到错误立即退出
+set -u  # 使用未定义变量时报错
+set -o pipefail  # 管道命令失败时退出
+```
+
+### 4. 日志函数
+
+建议使用统一的日志函数：
+
+```bash
+log_info() {
+    echo "🔹 $*"
+}
+
+log_success() {
+    echo "✅ $*"
+}
+
+log_error() {
+    echo "❌ $*" >&2
+}
+
+log_warning() {
+    echo "⚠️  $*" >&2
+}
+```
+
+### 5. 参数处理
+
+脚本应该支持 `--help` 参数：
+
+```bash
+show_help() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --option1, -o1    选项1说明"
+    echo "  --option2, -o2    选项2说明"
+    echo "  --help, -h        显示帮助信息"
+    echo ""
+    echo "Environment Variables:"
+    echo "  ENV_VAR1           环境变量1说明"
+    echo "  ENV_VAR2           环境变量2说明"
+    exit 0
+}
+
+# 解析参数
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --option1|-o1)
+            OPTION1="$2"
+            shift 2
+            ;;
+        --help|-h)
+            show_help
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            show_help
+            ;;
+    esac
+done
+```
+
+### 6. 配置区域
+
+脚本应该有清晰的配置区域：
+
+```bash
+# ---------- 用户配置区域 ----------
+CONFIG_VAR1="default_value1"
+CONFIG_VAR2="default_value2"
+# ---------- 配置结束 ----------
+```
+
+### 7. 验证安装
+
+脚本应该验证安装结果：
+
+```bash
+# 验证安装
+if command -v python3 &>/dev/null; then
+    log_success "Python installed: $(python3 --version)"
+else
+    log_error "Python installation failed"
+    exit 1
+fi
+```
+
+### 8. 添加到 README
+
+添加新脚本后，需要更新此 README.md：
+
+1. 在"脚本列表"表格中添加新脚本信息
+2. 在"使用样例"中添加使用示例
+3. 在"添加新脚本规范"中更新相关说明（如需要）
+
+### 9. 测试脚本
+
+添加新脚本后，应该进行测试：
+
+```bash
+# 测试帮助信息
+bash scripts/your_script.sh --help
+
+# 测试基本功能
+bash scripts/your_script.sh
+
+# 测试参数
+bash scripts/your_script.sh --option1 value1
+
+# 验证结果
+# 检查脚本是否正确执行
+# 检查是否有错误输出
+# 检查是否达到预期效果
+```
+
+### 10. 权限设置
+
+脚本应该具有可执行权限：
+
+```bash
+chmod +x scripts/your_script.sh
+```
+
+## 常见问题
+
+### Q: 脚本执行权限不足？
+
+A: 添加执行权限：
+```bash
+chmod +x scripts/your_script.sh
+```
+
+### Q: 脚本执行失败？
+
+A: 检查以下内容：
+1. 脚本头部是否正确（`#!/bin/bash`）
+2. 依赖命令是否已安装
+3. 配置项是否正确
+4. 是否有足够的权限
+
+### Q: 如何调试脚本？
+
+A: 使用 `bash -x` 调试：
+```bash
+bash -x scripts/your_script.sh
+```
+
+### Q: 脚本需要 sudo 权限？
+
+A: 使用 sudo 执行：
+```bash
+sudo bash scripts/your_script.sh
+```
+
+## 更多信息
+
+- [主文档](../README.md)
+- [操作指南](../guide/README.md)
+- [环境配置](../guide/enviroment/)
