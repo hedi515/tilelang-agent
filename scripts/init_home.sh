@@ -20,20 +20,11 @@ MAPPED_PATHS=(
 ".bash_aliases"
 ".bash_history"
 ".bun"
-".cache"
-"CANNBot"
-"codearts"
-".codearts-server/extensions"
 ".config"
 ".gitconfig"
-".local"
 "log"
 ".opencode"
-".pip"
-".profile"
-".ssh"
-"var"
-".vscode-server"    
+".pip"  
 # 添加其他你想要持久化的路径
 )
 # ---------- 配置结束 ----------
