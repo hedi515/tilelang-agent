@@ -113,41 +113,21 @@ git submodule status
 
 ### Step 6: Execute Installation Script
 
-Run the TileLang installation script located at `tilelang-ascend/install_ascend.sh`.
+Ask the user if they want to execute the TileLang installation script located at `tilelang-ascend/install_ascend.sh`.
+
+If the user confirms, run the script without monitoring output:
 
 ```bash
 bash tilelang-ascend/install_ascend.sh
 ```
 
-Monitor the installation progress. The script will:
+The script will:
 - Check Python version (requires 3.10+)
 - Install Python requirements
 - Clone and build TVM
 - Configure CMake
 - Build TileLang
 
-### Step 7: Cleanup
-
-Remove the mirror configuration to restore normal GitHub access.
-
-```bash
-git config --global --unset url."https://ghfast.top/https://github.com/".insteadOf 2>/dev/null || true
-```
-
-### Step 8: Verify Installation
-
-Help the user verify the installation was successful.
-
-```bash
-# Check submodule status
-git submodule status
-
-# Check Python package
-python3 -c "import tilelang; print(tilelang.__version__)"
-
-# Check build artifacts
-ls -la build/
-```
 
 ## Troubleshooting
 

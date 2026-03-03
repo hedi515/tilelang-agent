@@ -55,10 +55,10 @@ for relpath in "${MAPPED_PATHS[@]}"; do
     src="$SOURCE_HOME/$relpath"
     dst="$TARGET_HOME/$relpath"
 
-    # 检查目标是否存在（必须存在）
+    # 检查目标是否存在（如果不存在则跳过）
     if [ ! -e "$dst" ]; then
-        echo "错误：目标 $dst 不存在，请先运行 backup_home.sh。如果home本来就没有，可以手动创建该文件或目录" >&2
-        exit 1
+        echo "跳过 $relpath：目标 $dst 不存在（首次备份时可能没有此文件/目录）"
+        continue
     fi
 
     # 如果源路径已经是正确的符号链接，跳过

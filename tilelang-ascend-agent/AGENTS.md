@@ -1,224 +1,278 @@
-# TileLang-Ascend 项目架构说明
+# TileLang-Ascend - AI Agent Guide
 
-## 项目简介
+> **For AI Agents (Claude Code, OpenCode, etc.)**
+> 
+> This document provides architecture guidance and coding conventions for the TileLang-Ascend project.
 
-TileLang-Ascend 是一个专门为华为昇腾（Ascend）NPU（神经网络处理器）架构优化的领域特定语言（DSL）。它基于 tile-lang 的 Python 语法和 [TVM](https://tvm.apache.org/) 编译器基础设施构建，使开发者能够高效地创建高性能 AI 计算内核，包括矩阵乘法（GEMM）、向量运算和注意力机制等操作。
+---
 
-编译器后端支持两条技术路线：[Ascend C & PTO](https://github.com/tile-ai/tilelang-ascend/tree/ascendc_pto) 和 [AscendNPU IR](https://github.com/tile-ai/tilelang-ascend/tree/npuir)。
+## Quick Reference for AI Agents
 
-## 目录结构说明
+### Common File Locations
+- **User examples**: `examples/` - Look here for usage patterns
+- **Python DSL**: `tilelang/` - Main Python API and language constructs
+- **C++ backend**: `src/` - Core compiler implementation
+- **Tests**: `testing/python/test_*.py` - Python tests
+- **Documentation**: `docs/` - Detailed documentation
 
-### 核心目录概览
+### Common Commands
+```bash
+# Run Python tests
+pytest testing/python/test_*.py
+
+# Run specific test
+pytest testing/python/test_gemm.py
+
+# Build C++ components
+cd build && cmake .. && make
+
+# Set environment for Ascend
+source set_env.sh
+```
+
+### Code Conventions
+- **Python**: Follow PEP 8, use type hints
+- **C++**: Follow Google C++ Style Guide
+- **File naming**: `snake_case` for Python, `snake_case.cc` for C++
+- **Test naming**: `test_<module>_<feature>.py`
+
+---
+
+## Project Overview
+
+**TileLang-Ascend** is a domain-specific language (DSL) optimized for Huawei Ascend NPU (Neural Processing Unit). It provides a Python-based DSL built on top of TVM compiler infrastructure for creating high-performance AI compute kernels.
+
+**Key Technologies:**
+- Python DSL with decorator-based JIT compilation
+- TVM-based compiler infrastructure
+- Ascend C & PTO instruction set
+- Support for GEMM, vector operations, attention mechanisms
+
+**Supported Backends:**
+- Ascend C & PTO (primary)
+- AscendNPU IR
+- CUDA (for compatibility testing)
+- CPU/HIP
+
+---
+
+## Directory Structure
 
 ```
 tilelang-ascend/
-├── tilelang/          # Python DSL 和编译器前端（用户接口层）
-├── src/               # C++ 后端实现（核心编译器）
-├── 3rdparty/          # 第三方依赖库
-├── examples/          # 示例代码和教程
-├── docs/              # 项目文档
-├── testing/           # 测试代码
-├── benchmark/         # 性能基准测试
-└── maint/             # 维护工具和脚本
+├── tilelang/          # Python DSL and compiler frontend (USER API)
+├── src/               # C++ backend implementation (CORE COMPILER)
+├── 3rdparty/          # Third-party dependencies
+├── examples/          # Example code and tutorials (START HERE)
+├── docs/              # Project documentation
+├── testing/           # Test code
+├── benchmark/         # Performance benchmarks
+└── maint/             # Maintenance tools and scripts
 ```
 
 ---
 
-## 详细目录功能说明
+## Module Details
 
-### 1. `tilelang/` - Python DSL 和编译器前端
+### 1. `tilelang/` - Python DSL and Compiler Frontend
 
-这是用户主要交互的接口层，提供了 Python 风格的 DSL 来编写 NPU 内核。
+**Purpose**: User-facing Python API for writing NPU kernels
+
+**Key Submodules:**
 
 ```
 tilelang/
-├── jit/              # JIT（即时）编译器实现
-│   ├── __init__.py   # JIT 装饰器和编译入口
-│   ├── kernel.py     # JITKernel 类，封装编译后的内核
-│   └── param.py      # 内核参数定义
+├── jit/              # JIT compilation
+│   ├── __init__.py   # @tilelang.jit decorator
+│   ├── kernel.py     # JITKernel class
+│   └── param.py      # Kernel parameter definitions
 │
-├── language/         # 语言接口和原语
-│   ├── tir/          # TIR（Tensor IR）抽象语法树
-│   ├── proxy.py      # 张量、缓冲区代理对象
-│   ├── kernel.py     # Kernel 上下文管理
-│   ├── allocate.py   # 内存分配原语（alloc_L1, alloc_ub等）
-│   ├── copy.py       # 数据拷贝原语
-│   ├── gemm.py       # GEMM 计算原语
-│   ├── parallel.py   # 并行计算原语（T.Parallel）
-│   ├── pipeline.py   # 流水线原语（T.Pipelined）
-│   ├── ascend.py     # Ascend 特定原语
-│   └── ascend_tile.py # Ascend Tile 操作
+├── language/         # Language primitives
+│   ├── tir/          # Tensor IR (AST)
+│   ├── proxy.py      # Tensor/buffer proxy objects
+│   ├── kernel.py     # Kernel context manager
+│   ├── allocate.py   # Memory allocation (alloc_L1, alloc_ub)
+│   ├── copy.py       # Data copy primitives
+│   ├── gemm.py       # GEMM computation primitives
+│   ├── parallel.py   # Parallel computation (T.Parallel)
+│   ├── pipeline.py   # Pipeline primitives (T.Pipelined)
+│   ├── ascend.py     # Ascend-specific primitives
+│   └── ascend_tile.py # Ascend Tile operations
 │
-├── engine/           # 编译引擎核心
-│   ├── lower.py      # 降层引擎：TIR → 优化后 TIR
-│   ├── param.py      # 内核参数管理
-│   └── callback.py   # 后处理回调注册
+├── engine/           # Compilation engine
+│   ├── lower.py      # Lowering engine: TIR → optimized TIR
+│   ├── param.py      # Kernel parameter management
+│   └── callback.py   # Post-processing callbacks
 │
-├── transform/        # IR 变换 Pass（Python 层）
-│   └── 前端优化变换
-│
-├── autotuner/        # 自动调优器
-│   └── 自动搜索最优内核参数
-│
-├── carver/           # 核心调度器
-│   └── 硬件资源映射和调度
-│
-├── layout/           # 内存布局定义
-│   └── Layout, Fragment 类
-│
-├── primitives/       # 底层计算原语
-│   └── gemm/         # GEMM 基础原语
-│
-├── contrib/          # 扩展功能
-│   └── 第三方集成
-│
-├── utils/            # 工具函数
-│   └── 辅助工具和类型定义
-│
-├── cache/            # 编译缓存管理
-├── profiler/         # 性能分析工具
-└── __init__.py       # 模块入口，暴露主要 API
+├── transform/        # IR transformation passes (Python)
+├── autotuner/        # Auto-tuning for optimal parameters
+├── carver/           # Core scheduler and resource mapping
+├── layout/           # Memory layout definitions
+├── primitives/       # Low-level computation primitives
+│   └── gemm/         # GEMM base primitives
+├── contrib/          # Extensions and third-party integrations
+├── utils/            # Utility functions and type definitions
+├── cache/            # Compilation cache management
+├── profiler/         # Performance profiling tools
+└── __init__.py       # Module entry point, exports main API
 ```
 
-**关键功能：**
-- **JIT 编译**：`@tilelang.jit` 装饰器自动编译 Python 函数为可执行内核
-- **DSL 原语**：提供 `T.alloc_L1`, `T.copy`, `T.gemm`, `T.Parallel` 等硬件原语
-- **编译引擎**：将 TIR 降层到目标硬件代码
-- **自动调优**：搜索最优的内核配置参数
+**Key APIs to Remember:**
+- `@tilelang.jit` - JIT compilation decorator
+- `T.alloc_L1` - L1 buffer allocation (Cube core)
+- `T.alloc_ub` - Unified Buffer allocation (Vector core)
+- `T.alloc_L0A/L0B/L0C` - L0 register allocation
+- `T.copy` - Data copy primitive
+- `T.gemm` / `T.mma` - Matrix multiplication
+- `T.Parallel` - Vectorization
+- `T.Pipelined` - Pipeline scheduling
+- `T.printf` - Debug printing
+- `T.dump_tensor` - Debug tensor dumping
 
 ---
 
-### 2. `src/` - C++ 后端实现
+### 2. `src/` - C++ Backend Implementation
 
-C++ 后端实现了核心的编译器 IR 变换、目标代码生成和运行时支持。
+**Purpose**: Core compiler IR transformations, code generation, and runtime support
+
+**Key Subdirectories:**
 
 ```
 src/
-├── ir.cc                      # IR 结构定义和扩展
+├── ir.cc                      # IR structure definitions and extensions
 │
-├── tl_templates/              # 模板库（代码生成模板）
-│   ├── ascend/                # Ascend 特定模板
-│   │   ├── common.h           # 通用头文件
-│   │   └── printf.h           # 调试打印模板
-│   ├── cuda/                  # CUDA 代码生成模板
-│   ├── hip/                   # HIP/ROCm 代码生成模板
-│   ├── cpu/                   # CPU 代码生成模板
-│   └── pto/                   # PTO 指令模板
+├── tl_templates/              # Code generation templates
+│   ├── ascend/                # Ascend-specific templates
+│   │   ├── common.h           # Common headers
+│   │   └── printf.h           # Debug print templates
+│   ├── cuda/                  # CUDA codegen templates
+│   ├── hip/                   # HIP/ROCm codegen templates
+│   ├── cpu/                   # CPU codegen templates
+│   └── pto/                   # PTO instruction templates
 │
-├── transform/                 # IR 变换 Pass（C++ 实现）
-│   ├── frontend_legalize.cc   # 前端合法化
-│   ├── layout_inference.cc    # 布局推断
-│   ├── flatten_buffer.cc      # 缓冲区扁平化
-│   ├── loop_vectorize.cc      # 循环向量化
-│   ├── inject_pipeline.cc     # 流水线注入
-│   ├── lower_tile_op.cc       # Tile 操作降层
-│   ├── ascend_*.cc            # Ascend 特定变换
-│   │   ├── ascend_combinecv.cc           # AIC/AIV 核心合并
-│   │   ├── ascend_lower_parallel_to_vector.cc  # Parallel → Vector 降层
-│   │   ├── ascend_memory_planning.cc     # 内存规划
-│   │   ├── ascend_sync_insert.cc         # 同步指令插入
-│   │   └── ascend_host.cc                # Ascend 主机端处理
-│   └── ...其他变换
+├── transform/                 # IR transformation passes (C++)
+│   ├── frontend_legalize.cc   # Frontend legalization
+│   ├── layout_inference.cc    # Layout inference
+│   ├── flatten_buffer.cc      # Buffer flattening
+│   ├── loop_vectorize.cc      # Loop vectorization
+│   ├── inject_pipeline.cc     # Pipeline injection
+│   ├── lower_tile_op.cc       # Tile operation lowering
+│   ├── ascend_combinecv.cc           # AIC/AIV core merging
+│   ├── ascend_lower_parallel_to_vector.cc  # Parallel → Vector lowering
+│   ├── ascend_memory_planning.cc     # Memory planning
+│   ├── ascend_sync_insert.cc         # Sync instruction insertion
+│   └── ascend_host.cc                # Ascend host-side handling
 │
-├── target/                    # 目标代码生成
-│   ├── codegen_ascend.cc      # Ascend C 代码生成器
-│   ├── codegen_ascend_pto.cc  # Ascend PTO 代码生成器
-│   ├── codegen_cuda.cc        # CUDA 代码生成器
-│   ├── codegen_hip.cc         # HIP 代码生成器
-│   ├── codegen_cpp.cc         # C++ 代码生成器
-│   ├── codegen_webgpu.cc      # WebGPU 代码生成器
-│   ├── rt_mod_ascend.cc       # Ascend 运行时模块
-│   ├── rt_mod_ascend_pto.cc   # Ascend PTO 运行时模块
-│   ├── rt_mod_cuda.cc         # CUDA 运行时模块
-│   ├── rt_mod_hip.cc          # HIP 运行时模块
-│   ├── rt_mod_cpp.cc          # C++ 运行时模块
-│   └── utils.cc               # 目标工具函数
+├── target/                    # Target code generation
+│   ├── codegen_ascend.cc      # Ascend C code generator
+│   ├── codegen_ascend_pto.cc  # Ascend PTO code generator
+│   ├── codegen_cuda.cc        # CUDA code generator
+│   ├── codegen_hip.cc         # HIP code generator
+│   ├── codegen_cpp.cc         # C++ code generator
+│   ├── codegen_webgpu.cc      # WebGPU code generator
+│   ├── rt_mod_ascend.cc       # Ascend runtime module
+│   ├── rt_mod_ascend_pto.cc   # Ascend PTO runtime module
+│   ├── rt_mod_cuda.cc         # CUDA runtime module
+│   ├── rt_mod_hip.cc          # HIP runtime module
+│   ├── rt_mod_cpp.cc          # C++ runtime module
+│   └── utils.cc               # Target utilities
 │
-├── runtime/                   # 运行时支持（CUDA/Ascend）
-│
-├── layout/                    # 布局处理（C++）
-│
-└── op/                        # 操作定义和 lowering
+├── runtime/                   # Runtime support (CUDA/Ascend)
+├── layout/                    # Layout handling (C++)
+└── op/                        # Operation definitions and lowering
 ```
 
-**关键功能：**
-- **IR 变换**：实现各种编译器优化 Pass
-- **代码生成**：将 TIR 转换为目标代码（Ascend C/CPU/CUDA/HIP）
-- **运行时**：提供内核执行、内存管理等运行时支持
+**Key Transformation Passes:**
+- `frontend_legalize` - Normalize IR structure
+- `layout_inference` - Infer optimal memory layouts
+- `flatten_buffer` - Flatten multi-dimensional buffers
+- `loop_vectorize` - Vectorize loops
+- `inject_pipeline` - Inject pipeline stages
+- `ascend_lower_parallel_to_vector` - Lower Parallel to Vector ops
+- `ascend_memory_planning` - Automatic memory planning
+- `ascend_sync_insert` - Automatic sync insertion
+- `ascend_combinecv` - Merge AIC/AIV cores
 
 ---
 
-### 3. `3rdparty/` - 第三方依赖
+### 3. `3rdparty/` - Third-Party Dependencies
 
 ```
 3rdparty/
-├── tvm/                  # TVM 编译器基础设施（ fork/修改版）
-├── pto-isa/              # PTO（Packet Tensor Operator）ISA 定义
-├── cutlass/              # NVIDIA CUTLASS 矩阵乘法库
-├── composable_kernel/    # AMD Composable Kernel 库
-├── catlass/              # CUTLASS 变体
-└── shmem/                # 共享内存实现
+├── tvm/                  # TVM compiler infrastructure (forked/modified)
+├── pto-isa/              # PTO (Packet Tensor Operator) ISA definitions
+├── cutlass/              # NVIDIA CUTLASS matrix multiplication library
+├── composable_kernel/    # AMD Composable Kernel library
+├── catlass/              # CUTLASS variant
+└── shmem/                # Shared memory implementation
 ```
 
-**关键依赖：**
-- **TVM**：核心编译器基础设施，提供 IR、调度、代码生成框架
-- **pto-isa**：Ascend PTO 指令集架构定义
+**Critical Dependencies:**
+- **TVM** - Core compiler infrastructure (IR, scheduling, codegen)
+- **pto-isa** - Ascend PTO instruction set architecture
 
 ---
 
-### 4. `examples/` - 示例代码
+### 4. `examples/` - Example Code
 
-提供了丰富的算子实现示例，展示了如何使用 TileLang-Ascend 编写高性能内核。
+**Purpose**: Demonstrates how to use TileLang-Ascend for various operators
+
+**Key Examples:**
 
 ```
 examples/
-├── gemm/                      # 矩阵乘法示例
-│   ├── example_gemm.py        # 基础 GEMM
-│   ├── example_gemm_intrinsic.py  # 高性能 GEMM（使用 intrinsic）
-│   └── example_gemm_aot.py    # AOT 编译示例
+├── gemm/                      # Matrix multiplication
+│   ├── example_gemm.py        # Basic GEMM
+│   ├── example_gemm_intrinsic.py  # High-performance GEMM with intrinsics
+│   └── example_gemm_aot.py    # AOT compilation example
 │
-├── elementwise/               # 逐元素操作
-│   └── vec_add.py             # 向量加法
+├── elementwise/               # Element-wise operations
+│   └── vec_add.py             # Vector addition
 │
-├── flash_attention/           # Flash Attention 实现
-│   ├── flash_attn_bhsd.py     # BSHD 布局 Flash Attention
-│   ├── flash_attn_bshd_developer.py  # Developer 模式
-│   └── flash_attn_bshd_pipeline.py   # 流水线优化版本
+├── flash_attention/           # Flash Attention implementations
+│   ├── flash_attn_bhsd.py     # BSHD layout Flash Attention
+│   ├── flash_attn_bhsd_developer.py  # Developer mode
+│   └── flash_attn_bshd_pipeline.py   # Pipeline-optimized version
 │
-├── sparse_flash_attention/    # 稀疏 Flash Attention
+├── sparse_flash_attention/    # Sparse Flash Attention
+├── lightning_indexer/         # Lightning indexer
 │
-├── lightning_indexer/         # Lightning 索引器
-│
-├── pipeline/                  # 流水线示例
+├── pipeline/                  # Pipeline examples
 │   ├── matmul_add_pipeline.py
 │   └── flash_attn_bshd_pipeline.py
 │
-├── softmax/                   # Softmax 算子
-├── reduce/                    # 归约算子
-├── activation/                # 激活函数
-├── normalization/             # 归一化层
-├── convolution/               # 卷积算子
-├── grouped_gemm/              # 分组 GEMM
-├── gemv/                      # 矩阵-向量乘法
-├── quant_batch_matmul/        # 量化批量矩阵乘法
-├── autotune/                  # 自动调优示例
-├── developer_mode/            # Developer 模式示例
-├── print/                     # 调试工具示例（T.printf, T.dump_tensor）
-└── torch_tl_ascend/           # PyTorch 集成示例
+├── softmax/                   # Softmax operator
+├── reduce/                    # Reduction operators
+├── activation/                # Activation functions
+├── normalization/             # Normalization layers
+├── convolution/               # Convolution operators
+├── grouped_gemm/              # Grouped GEMM
+├── gemv/                      # Matrix-vector multiplication
+├── quant_batch_matmul/        # Quantized batch matmul
+├── autotune/                  # Auto-tuning examples
+├── developer_mode/            # Developer mode examples
+├── print/                     # Debug tool examples (T.printf, T.dump_tensor)
+└── torch_tl_ascend/           # PyTorch integration examples
 ```
+
+**When Adding New Features:**
+1. Create example in `examples/` directory
+2. Follow existing naming conventions
+3. Include comments explaining the implementation
+4. Add to relevant test suite
 
 ---
 
-### 5. `docs/` - 项目文档
+### 5. `docs/` - Project Documentation
 
 ```
 docs/
-├── index.md                   # 文档首页
-├── get_started/               # 入门指南
-│   ├── Installation.md        # 安装说明
-│   └── overview.md            # 项目概览
+├── index.md                   # Documentation home
+├── get_started/               # Getting started guide
+│   ├── Installation.md        # Installation instructions
+│   └── overview.md            # Project overview
 │
-├── tutorials/                 # 教程
+├── tutorials/                 # Tutorials
 │   ├── writing_kernels_with_tilelibrary.md
 │   ├── writing_kernels_with_thread_primitives.md
 │   ├── annotate_memory_layout.md
@@ -226,11 +280,11 @@ docs/
 │   ├── auto_tuning.md
 │   ├── jit_compilation.md
 │   ├── pipelining_computations_and_data_movements.md
-│   ├── t_parallel.md          # T.Parallel 教程
-│   ├── t_pipelied.md          # T.Pipelined 教程
+│   ├── t_parallel.md          # T.Parallel tutorial
+│   ├── t_pipelied.md          # T.Pipelined tutorial
 │   └── automatic_workspace_allocation.md
 │
-├── deeplearning_operators/    # 深度学习算子文档
+├── deeplearning_operators/    # Deep learning operator docs
 │   ├── elementwise.md
 │   ├── gemv.md
 │   ├── matmul.md
@@ -241,187 +295,178 @@ docs/
 │   ├── convolution.md
 │   └── tmac_gpu.md
 │
-├── language_ref/              # 语言参考
-│   ├── ast.md                 # AST 文档
-│   ├── primitives.md          # 原语参考
-│   └── tilelibrary.md         # Tile 库参考
+├── language_ref/              # Language reference
+│   ├── ast.md                 # AST documentation
+│   ├── primitives.md          # Primitive reference
+│   └── tilelibrary.md         # Tile library reference
 │
-└── api/                       # API 参考
+└── api/                       # API reference
     └── modules.md
 ```
 
 ---
 
-### 6. `testing/` - 测试代码
+### 6. `testing/` - Test Code
 
 ```
 testing/
-├── python/                    # Python 单元测试
+├── python/                    # Python unit tests
 │   └── test_*.py
-└── cpp/                       # C++ 单元测试
+└── cpp/                       # C++ unit tests
+```
+
+**Test Naming Convention:**
+- `test_<module>_<feature>.py` - e.g., `test_gemm_basic.py`, `test_flash_attention.py`
+
+**Running Tests:**
+```bash
+# Run all Python tests
+pytest testing/python/
+
+# Run specific test file
+pytest testing/python/test_gemm.py
+
+# Run with verbose output
+pytest testing/python/ -v
+
+# Run specific test
+pytest testing/python/test_gemm.py::test_gemm_basic
 ```
 
 ---
 
-### 7. `benchmark/` - 性能基准测试
+### 7. `benchmark/` - Performance Benchmarks
+
+Contains performance testing scripts for measuring operator performance.
+
+---
+
+### 8. Important Root Files
 
 ```
-benchmark/
-└── 性能测试脚本
+├── setup.py                   # Python package installation
+├── CMakeLists.txt             # C++ build configuration
+├── install_ascend.sh          # Ascend platform installation script
+├── set_env.sh                 # Environment variable setup
+├── requirements*.txt          # Python dependencies
+├── pyproject.toml             # Python project configuration
+├── VERSION                    # Version number
+├── LICENSE                    # MIT License
+└── README.md                  # English README
 ```
 
 ---
 
-### 8. 其他重要文件
+## Compilation Flow
+
+### User Code → Executable Binary
 
 ```
-├── setup.py                   # Python 包安装脚本
-├── CMakeLists.txt             # C++ 构建配置
-├── install_ascend.sh          # Ascend 平台安装脚本
-├── set_env.sh                 # 环境变量设置脚本
-├── requirements*.txt          # Python 依赖
-├── pyproject.toml             # Python 项目配置
-├── VERSION                    # 版本号
-├── LICENSE                    # MIT 许可证
-└── README.md                  # 英文 README
-```
-
----
-
-## 各目录之间的协同关系
-
-### 编译流程协同
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         用户代码层                              │
-│  (examples/ - 用户编写 Python DSL 代码)                        │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Python DSL 层                               │
-│  (tilelang/)                                                  │
-│  ├─ @tilelang.jit 装饰器     →  JIT 编译入口                 │
-│  ├─ T.prim_func             →  定义 TIR 函数                  │
-│  ├─ T.alloc_L1/ub           →  内存分配                       │
-│  ├─ T.copy/T.gemm           →  计算原语                       │
-│  ├─ T.Parallel/T.Pipelined  →  并行/流水线                   │
-│  └─ tilelang.engine.lower   →  降层引擎                       │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │ TIR (Tensor IR)
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     变换 Pass 层                               │
-│  (src/transform/ + tilelang/transform/)                       │
-│  ├─ frontend_legalize      →  前端合法化                      │
-│  ├─ layout_inference       →  布局推断                        │
-│  ├─ flatten_buffer         →  缓冲区扁平化                    │
-│  ├─ loop_vectorize         →  循环向量化                      │
-│  ├─ inject_pipeline        →  流水线注入                      │
-│  ├─ ascend_*               →  Ascend 特定变换                 │
-│  │  ├─ ascend_lower_parallel_to_vector  →  Parallel→Vector   │
-│  │  ├─ ascend_memory_planning          →  内存规划          │
-│  │  ├─ ascend_sync_insert              →  同步插入          │
-│  │  └─ ascend_combinecv                →  核心合并          │
-│  └─ lower_tile_op          →  Tile 操作降层                  │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │ 优化后的 TIR
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    代码生成层                                   │
-│  (src/target/)                                                │
-│  ├─ codegen_ascend_pto.cc  →  生成 Ascend C + PTO 指令       │
-│  ├─ rt_mod_ascend_pto.cc   →  Ascend PTO 运行时模块          │
-│  ├─ codegen_cuda.cc        →  生成 CUDA 代码（兼容性）       │
-│  └─ rt_mod_*.cc            →  运行时模块                      │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │ Ascend C 源码
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    模板库层                                    │
-│  (src/tl_templates/)                                          │
-│  └─ ascend/common.h, printf.h →  代码生成模板                │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   外部编译器                                    │
-│  (华为 CANN 工具链)                                            │
-│  ├─ Ascend C 编译器          →  编译 Ascend C 代码           │
-│  └─ PTO 汇编器               →  处理 PTO 指令                │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    可执行二进制                                 │
-│  (.so 或 .o 文件)                                             │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   运行时执行                                   │
-│  (tilelang 运行时 + CANN 运行时)                               │
-│  └─ 在 Ascend NPU 上执行                                      │
-└─────────────────────────────────────────────────────────────────┘
+1. User Code Layer
+   └── examples/*.py (Python DSL with @tilelang.jit)
+            ↓
+2. Python DSL Layer
+   └── tilelang/
+       ├─ @tilelang.jit decorator
+       ├─ T.prim_func (define kernel)
+       ├─ T.alloc_L1/ub (memory allocation)
+       ├─ T.copy/T.gemm (computation primitives)
+       ├─ T.Parallel/T.Pipelined (parallel/pipeline)
+       └─ tilelang.engine.lower (lowering engine)
+            ↓
+3. IR Transformation Pass Layer
+   └── src/transform/ + tilelang/transform/
+       ├─ frontend_legalize (normalize IR)
+       ├─ layout_inference (infer layouts)
+       ├─ flatten_buffer (flatten buffers)
+       ├─ loop_vectorize (vectorize loops)
+       ├─ inject_pipeline (inject pipelines)
+       ├─ ascend_lower_parallel_to_vector (Parallel→Vector)
+       ├─ ascend_memory_planning (memory planning)
+       ├─ ascend_sync_insert (sync insertion)
+       ├─ ascend_combinecv (core merging)
+       └─ lower_tile_op (lower tile ops)
+            ↓
+4. Code Generation Layer
+   └── src/target/
+       ├─ codegen_ascend_pto.cc (generate Ascend C + PTO)
+       ├─ rt_mod_ascend_pto.cc (runtime module)
+       ├─ codegen_cuda.cc (generate CUDA for testing)
+       └─ rt_mod_*.cc (runtime modules)
+            ↓
+5. Template Library Layer
+   └── src/tl_templates/
+       └─ ascend/common.h, printf.h (codegen templates)
+            ↓
+6. External Compiler
+   └── Huawei CANN Toolchain
+       ├─ Ascend C Compiler (compile Ascend C)
+       └─ PTO Assembler (process PTO instructions)
+            ↓
+7. Executable Binary
+   └── .so or .o files
+            ↓
+8. Runtime Execution
+   └── tilelang runtime + CANN runtime
+       └─ Execute on Ascend NPU
 ```
 
 ---
 
-## 整体架构图
+## Architecture Diagram
 
 ```mermaid
 graph TB
-    subgraph "用户层"
-        A["用户代码 examples/*.py"] --> B["@tilelang.jit装饰器"]
+    subgraph "User Layer"
+        A["User Code examples/*.py"] --> B["@tilelang.jit decorator"]
     end
 
-    subgraph "Python DSL 层<br/>tilelang/"
-        B --> C[T.prim_func<br/>定义内核]
-        C --> D[语言原语<br/>T.alloc_L1/ub<br/>T.copy<br/>T.gemm<br/>T.Parallel<br/>T.Pipelined]
-        D --> E[降层引擎<br/>tilelang.engine.lower]
+    subgraph "Python DSL Layer<br/>tilelang/"
+        B --> C[T.prim_func<br/>define kernel]
+        C --> D[Language Primitives<br/>T.alloc_L1/ub<br/>T.copy<br/>T.gemm<br/>T.Parallel<br/>T.Pipelined]
+        D --> E[Lowering Engine<br/>tilelang.engine.lower]
     end
 
-    subgraph "IR 变换层<br/>src/transform/"
-        E --> F[前端合法化<br/>frontend_legalize]
-        F --> G[布局推断<br/>layout_inference]
-        G --> H[缓冲区扁平化<br/>flatten_buffer]
-        H --> I[循环优化<br/>loop_vectorize]
-        I --> J[流水线注入<br/>inject_pipeline]
-        J --> K[Ascend 特定变换<br/>ascend_*.cc]
+    subgraph "IR Transform Layer<br/>src/transform/"
+        E --> F[Frontend Legalize<br/>frontend_legalize]
+        F --> G[Layout Inference<br/>layout_inference]
+        G --> H[Buffer Flattening<br/>flatten_buffer]
+        H --> I[Loop Optimization<br/>loop_vectorize]
+        I --> J[Pipeline Injection<br/>inject_pipeline]
+        J --> K[Ascend Transforms<br/>ascend_*.cc]
     end
 
-    subgraph "代码生成层<br/>src/target/"
-        K --> L{目标平台}
-        L -->|Ascend PTO| M[codegen_ascend_pto<br/>生成 Ascend C]
-        L -->|CUDA| N[codegen_cuda<br/>生成 CUDA]
-        L -->|CPU| O[codegen_cpp<br/>生成 C++]
+    subgraph "Code Generation Layer<br/>src/target/"
+        K --> L{Target Platform}
+        L -->|Ascend PTO| M[codegen_ascend_pto<br/>generate Ascend C]
+        L -->|CUDA| N[codegen_cuda<br/>generate CUDA]
+        L -->|CPU| O[codegen_cpp<br/>generate C++]
     end
 
-    subgraph "模板库<br/>src/tl_templates/"
-        M --> P[ascend/common.h<br/>代码生成模板]
+    subgraph "Template Library<br/>src/tl_templates/"
+        M --> P[ascend/common.h<br/>codegen templates]
     end
 
-    subgraph "外部工具链"
-        P --> Q[Ascend C 编译器<br/>华为 CANN]
-        Q --> R[可执行二进制<br/>.so/.o]
+    subgraph "External Toolchain"
+        P --> Q[Ascend C Compiler<br/>Huawei CANN]
+        Q --> R[Executable Binary<br/>.so/.o]
     end
 
-    subgraph "运行时层"
-        R --> S[tilelang 运行时<br/>rt_mod_ascend_pto.cc]
-        S --> T[CANN 运行时]
-        T --> U[Ascend NPU<br/>硬件执行]
+    subgraph "Runtime Layer"
+        R --> S[tilelang runtime<br/>rt_mod_ascend_pto.cc]
+        S --> T[CANN runtime]
+        T --> U[Ascend NPU<br/>hardware execution]
     end
 
-    subgraph "第三方依赖<br/>3rdparty/"
-        V[TVM<br/>编译器基础] --> E
-        W[pto-isa<br/>指令集定义] --> M
+    subgraph "Third-Party Dependencies<br/>3rdparty/"
+        V[TVM<br/>compiler base] --> E
+        W[pto-isa<br/>ISA definition] --> M
     end
 
-    subgraph "辅助工具"
-        X[自动调优<br/>tilelang/autotuner] --> B
-        Y[性能分析<br/>tilelang/profiler] --> U
-        Z[缓存管理<br/>tilelang/cache] --> E
+    subgraph "Helper Tools"
+        X[Auto-tuning<br/>tilelang/autotuner] --> B
+        Y[Profiling<br/>tilelang/profiler] --> U
+        Z[Cache Management<br/>tilelang/cache] --> E
     end
 
     style A fill:#e1f5fe
@@ -432,63 +477,142 @@ graph TB
 
 ---
 
-## 模块间数据流
+## Key Technical Features
 
-### 1. 用户编写内核
-用户在 `examples/` 中使用 Python DSL 编写内核函数，使用 `@tilelang.jit` 装饰器标记。
-
-### 2. JIT 编译触发
-调用被装饰的函数时，JIT 编译器启动：
-- `tilelang/jit/` 解析函数参数
-- `tilelang/language/` 构建 TIR（Tensor IR）
-
-### 3. IR 降层和优化
-`tilelang/engine/lower.py` 启动降层流程，依次应用 `src/transform/` 中的各种 Pass：
-- **前端合法化**：规范化 IR 结构
-- **布局推断**：推断最优内存布局
-- **循环优化**：向量化、流水线化
-- **Ascend 特定变换**：Parallel → Vector 降层、内存规划、同步插入
-
-### 4. 代码生成
-`src/target/codegen_ascend_pto.cc` 将优化后的 TIR 转换为 Ascend C 代码，使用 `src/tl_templates/` 中的模板。
-
-### 5. 外部编译
-华为 CANN 工具链将生成的 Ascend C 代码编译为可执行的机器码。
-
-### 6. 运行时执行
-`tilelang` 运行时加载并执行编译好的内核，通过 CANN 运行时与 Ascend NPU 交互。
-
----
-
-## 核心技术特性
-
-### 1. 双技术路线支持
-- **Ascend C & PTO**：使用 Ascend C 语言和 PTO（Packet Tensor Operator）指令
-- **AscendNPU IR**：使用 NPU IR 表示
+### 1. Dual Backend Support
+- **Ascend C & PTO**: Uses Ascend C language and PTO (Packet Tensor Operator) instructions
+- **AscendNPU IR**: Uses NPU IR representation
 
 ### 2. Pythonic DSL
-- Python 原生语法
-- 装饰器模式（`@tilelang.jit`）
-- 类型提示支持
+- Native Python syntax
+- Decorator pattern (`@tilelang.jit`)
+- Type hint support
 
-### 3. 硬件原语映射
-- `alloc_L1` → L1 缓冲区（Cube 核心）
-- `alloc_ub` → Unified Buffer（Vector 核心）
-- `alloc_L0A/L0B/L0C` → L0 寄存器
-- `T.gemm` / `T.mma` → 矩阵乘法加速器
-- `T.Parallel` → 向量化指令
-- `T.Pipelined` → 流水线调度
+### 3. Hardware Primitive Mapping
+| Primitive | Hardware Mapping |
+|-----------|-----------------|
+| `alloc_L1` | L1 buffer (Cube core) |
+| `alloc_ub` | Unified Buffer (Vector core) |
+| `alloc_L0A/L0B/L0C` | L0 registers |
+| `T.gemm` / `T.mma` | Matrix multiplication accelerator |
+| `T.Parallel` | Vectorization instructions |
+| `T.Pipelined` | Pipeline scheduling |
 
-### 4. 编译器优化
-- **自动同步插入**：`TL_ASCEND_AUTO_SYNC`
-- **自动内存规划**：`TL_ASCEND_MEMORY_PLANNING`
-- **自动核间同步**：`TL_ASCEND_AUTO_CV_SYNC`
-- **流水线优化**：计算与数据传输重叠
+### 4. Compiler Optimizations
+- **Auto Sync Insertion**: `TL_ASCEND_AUTO_SYNC`
+- **Auto Memory Planning**: `TL_ASCEND_MEMORY_PLANNING`
+- **Auto Core Sync**: `TL_ASCEND_AUTO_CV_SYNC`
+- **Pipeline Optimization**: Overlap computation and data transfer
 
-### 5. 高级特性
-- **自动工作空间分配**：`workspace_idx` 参数
-- **调试工具**：`T.printf`, `T.dump_tensor`
-- **布局注解**：`T.annotate_layout`
-- **地址注解**：`T.annotate_address`
+### 5. Advanced Features
+- **Auto Workspace Allocation**: `workspace_idx` parameter
+- **Debug Tools**: `T.printf`, `T.dump_tensor`
+- **Layout Annotation**: `T.annotate_layout`
+- **Address Annotation**: `T.annotate_address`
 
 ---
+
+## Environment Variables
+
+Key environment variables for development:
+
+```bash
+# Ascend toolkit path
+ASCEND_TOOLKIT_HOME=/path/to/ascend/kit
+
+# Python path
+PYTHONPATH=/path/to/tilelang-ascend:$PYTHONPATH
+
+# Ascend runtime path
+LD_LIBRARY_PATH=$ASCEND_TOOLKIT_HOME/lib64:$LD_LIBRARY_PATH
+
+# Auto-optimization flags
+TL_ASCEND_AUTO_SYNC=1
+TL_ASCEND_MEMORY_PLANNING=1
+TL_ASCEND_AUTO_CV_SYNC=1
+```
+
+---
+
+## Common Development Tasks
+
+### Adding a New Operator
+
+1. **Define Python API** in `tilelang/language/`
+2. **Implement lowering** in `src/transform/` or `tilelang/transform/`
+3. **Add code generation** in `src/target/`
+4. **Create example** in `examples/`
+5. **Write tests** in `testing/python/`
+6. **Update documentation** in `docs/`
+
+### Adding a New Transformation Pass
+
+1. **Create pass file** in `src/transform/` (C++) or `tilelang/transform/` (Python)
+2. **Register pass** in appropriate pass manager
+3. **Write tests** to verify correctness
+4. **Add to lowering pipeline** if needed
+
+### Debugging Compilation Issues
+
+1. Enable debug output: `export TL_DEBUG=1`
+2. Use `T.printf` in kernel code
+3. Use `T.dump_tensor` to inspect tensors
+4. Check generated Ascend C code in build directory
+5. Use developer mode for detailed IR dumps
+
+---
+
+## Code Style Guidelines
+
+### Python
+- Follow PEP 8
+- Use type hints for function signatures
+- Maximum line length: 100
+- Use docstrings for public APIs
+
+### C++
+- Follow Google C++ Style Guide
+- Use clang-format for formatting
+- Maximum line length: 100
+- Add comments for non-trivial logic
+
+### File Naming
+- Python: `snake_case.py`
+- C++: `snake_case.cc`, `snake_case.h`
+- Tests: `test_<module>_<feature>.py`
+
+---
+
+## Getting Help
+
+- **Documentation**: See `docs/` directory
+- **Examples**: See `examples/` directory
+- **Issues**: Check GitHub issues
+- **Code Patterns**: Study existing examples in `examples/`
+
+---
+
+## Summary for AI Agents
+
+**When working on this project:**
+
+1. **Start with examples** - Look at `examples/` to understand usage patterns
+2. **Follow conventions** - Use the file naming and code style guidelines
+3. **Write tests** - Add tests in `testing/python/` for new features
+4. **Update docs** - Keep documentation in sync with code changes
+5. **Check both layers** - Changes may require updates in both Python (`tilelang/`) and C++ (`src/`)
+6. **Use primitives** - Leverage existing primitives in `tilelang/language/`
+7. **Mind the hardware** - Remember Ascend NPU constraints and features
+
+**Key files to understand:**
+- `tilelang/__init__.py` - Main API exports
+- `tilelang/jit/__init__.py` - JIT compilation entry point
+- `tilelang/engine/lower.py` - Lowering pipeline
+- `src/target/codegen_ascend_pto.cc` - Code generation
+- `examples/gemm/example_gemm.py` - Basic usage pattern
+
+**Testing before committing:**
+- Run relevant tests in `testing/python/`
+- Check code style with linters
+- Verify examples still work
+- Test on Ascend hardware if available

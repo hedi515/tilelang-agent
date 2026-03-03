@@ -16,7 +16,7 @@ def get_tilelang_agent_root():
     """Get the tilelang-agent root directory."""
     current = Path(__file__).resolve()
     while current != current.parent:
-        if (current / "tilelang-agent" / ".agents").exists():
+        if (current / ".agents").exists() and (current / "AGENTS.md").exists():
             return current
         current = current.parent
     return None
@@ -129,7 +129,7 @@ def verify_installation(install_dir, agent_root):
     
     if agents_link.is_symlink():
         target = os.readlink(agents_link)
-        expected = str(agent_root / "tilelang-agent" / ".agents")
+        expected = str(agent_root / ".agents")
         if target == expected:
             print(f"✓ .agents link is correct")
         else:
@@ -141,7 +141,7 @@ def verify_installation(install_dir, agent_root):
     
     if agents_md_link.is_symlink():
         target = os.readlink(agents_md_link)
-        expected = str(agent_root / "tilelang-agent" / "AGENTS.md")
+        expected = str(agent_root / "AGENTS.md")
         if target == expected:
             print(f"✓ AGENTS.md link is correct")
         else:
@@ -194,10 +194,10 @@ def main():
     
     success = True
     
-    if not create_symlink(agent_root / "tilelang-agent" / ".agents", install_dir / ".agents"):
+    if not create_symlink(agent_root / ".agents", install_dir / ".agents"):
         success = False
     
-    if not create_symlink(agent_root / "tilelang-agent" / "AGENTS.md", install_dir / "AGENTS.md"):
+    if not create_symlink(agent_root / "AGENTS.md", install_dir / "AGENTS.md"):
         success = False
     
     if not update_gitignore(install_dir):
