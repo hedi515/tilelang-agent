@@ -35,9 +35,9 @@ ssh_dst="$TARGET_HOME/.ssh"
 mkdir -p "$ssh_dst" "$ssh_src"
 chmod 700 "$ssh_dst" "$ssh_src"
 
-# 2. 同步常规 SSH 文件 (私钥、配置、已知主机)
+# 2. 同步常规 SSH 文件 (私钥、公钥、配置、已知主机)
 # 使用 -u 仅更新较新的文件，-p 保留权限
-for file in id_rsa id_ed25519 config known_hosts; do
+for file in id_rsa id_rsa.pub id_ed25519 id_ed25519.pub config known_hosts; do
     if [ -f "$ssh_dst/$file" ]; then
         cp -up "$ssh_dst/$file" "$ssh_src/"
     elif [ -f "$ssh_src/$file" ]; then
