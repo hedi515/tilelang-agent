@@ -18,8 +18,7 @@ tilelang-agent/
 │   ├── install_node.sh         # Node.js 安装
 │   ├── install_tilelang.sh     # TileLang 安装
 │   ├── opencode_apikey_config.sh  # API Key 配置
-│   ├── backup_home.sh          # Home 目录备份
-│   ├── init_home.sh           # Home 目录初始化
+│   ├── init_home.sh           # Home 目录备份、恢复
 │   └── README.md              # 脚本使用说明
 ├── guide/                     # 操作指南
 │   ├── README.md              # 操作指南概览
@@ -61,8 +60,7 @@ tilelang-agent/
 | install_node.sh | Node.js 自动安装（支持中国镜像，使用 nvm 安装 Node.js 22） |
 | install_tilelang.sh | TileLang 安装（一键安装和配置，自动配置 GitHub 镜像加速） |
 | opencode_apikey_config.sh | OpenCode 配置（一键配置 API Key 和模型端点） |
-| backup_home.sh | Home 目录备份（首次备份容器家目录到持久化存储） |
-| init_home.sh | Home 目录初始化（容器启动时初始化 home 目录软链接） |
+| init_home.sh | Home 目录持久化（.ssh 如有更改还需再次执行该脚本后同步） |
 
 ### AI Skills
 

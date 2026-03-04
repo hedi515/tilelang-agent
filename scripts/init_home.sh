@@ -1,94 +1,110 @@
 #!/bin/bash
 # ======================================================
-# 容器启动初始化脚本（简化版，无进程检查）
-# 功能：确保指定路径在 SOURCE_HOME 中是符号链接指向 TARGET_HOME。
-#       如果原路径存在且不是链接，尝试将其移动到 BACKUP_HOME 再创建链接。
-#       若移动失败（如进程占用），则报错退出。
-# 配置必须与 backup_home.sh 保持一致。
-# 注意：请确保在运行此脚本前，没有进程占用相关路径（如 vscode-server）。
+# 容器启动初始化脚本（增强安全版）
 # ======================================================
 
-set -e  # 遇到错误立即退出
+set -e 
 
-# ---------- 用户配置区域（必须与 backup_home.sh 一致） ----------
+# ---------- 用户配置区域 ----------
 SOURCE_HOME="/home/developer"
 TARGET_HOME="/mnt/workspace/home"
-# 需要持久化的路径（可以是文件或目录，相对于 SOURCE_HOME）
-MAPPED_PATHS=(
-"agent"
-".bashrc"
-".bash_aliases"
-".bash_history"
-".bun"
-".config"
-".gitconfig"
-"log"
-".opencode"
-".pip"  
-".ssh"
-# 添加其他你想要持久化的路径
-)
-# ---------- 配置结束 ----------
-
 BACKUP_HOME="${SOURCE_HOME}.bak"
 
-# 检查目标持久化目录是否存在
-if [ ! -d "$TARGET_HOME" ]; then
-    echo "错误：持久化目录 $TARGET_HOME 不存在！" >&2
-    echo "请先运行 backup_home.sh 进行首次备份。" >&2
-    exit 1
+# 需要通过软链接持久化的路径（不含 .ssh）
+MAPPED_PATHS=(
+    ".bashrc"
+    ".bash_aliases"
+    ".bun"
+    ".config"
+    ".gitconfig"
+    ".opencode"
+    ".pip"
+    ".bash_history"
+)
+
+CURRENT_USER="developer"
+CURRENT_GROUP="developer"
+
+# ---------- 特殊处理 .ssh 目录（核心逻辑） ----------
+echo "🔒 正在配置 SSH 安全目录..."
+
+ssh_src="$SOURCE_HOME/.ssh"
+ssh_dst="$TARGET_HOME/.ssh"
+
+# 1. 确保目标和源目录存在（真实目录）
+mkdir -p "$ssh_dst" "$ssh_src"
+chmod 700 "$ssh_dst" "$ssh_src"
+
+# 2. 同步常规 SSH 文件 (私钥、配置、已知主机)
+# 使用 -u 仅更新较新的文件，-p 保留权限
+for file in id_rsa id_ed25519 config known_hosts; do
+    if [ -f "$ssh_dst/$file" ]; then
+        cp -up "$ssh_dst/$file" "$ssh_src/"
+    elif [ -f "$ssh_src/$file" ]; then
+        cp -up "$ssh_src/$file" "$ssh_dst/"
+    fi
+done
+
+# 3. 特殊处理 authorized_keys (合并与去重)
+auth_file_src="$ssh_src/authorized_keys"
+auth_file_dst="$ssh_dst/authorized_keys"
+
+if [ -f "$auth_file_dst" ] || [ -f "$auth_file_src" ]; then
+    echo "正在合并并去重 authorized_keys..."
+    # 合并两个文件到一个临时文件
+    touch "$auth_file_src" "$auth_file_dst"
+    cat "$auth_file_src" "$auth_file_dst" | sort -u > "${auth_file_src}.tmp"
+    
+    # 写回源和目标
+    mv "${auth_file_src}.tmp" "$auth_file_src"
+    cp "$auth_file_src" "$auth_file_dst"
+    
+    # 强制设置权限
+    chmod 600 "$auth_file_src" "$auth_file_dst"
 fi
 
-# 确保当前工作目录不在 SOURCE_HOME 下
+# 4. 修复所有私钥权限
+find "$ssh_src" -type f -name "id_*" -exec chmod 600 {} \;
+
+# 确保所有权正确
+sudo chown -R $CURRENT_USER:$CURRENT_GROUP "$ssh_src"
+
+echo "✓ SSH 密钥与 authorized_keys 已就绪"
+
+# ---------- 处理符号链接映射（其余目录） ----------
 cd /
 
-# 遍历每个映射路径
 for relpath in "${MAPPED_PATHS[@]}"; do
     src="$SOURCE_HOME/$relpath"
     dst="$TARGET_HOME/$relpath"
 
-    # 检查目标是否存在（如果不存在则跳过）
+    # 目标不存在则首次备份
     if [ ! -e "$dst" ]; then
-        echo "跳过 $relpath：目标 $dst 不存在（首次备份时可能没有此文件/目录）"
-        continue
+        if [ -e "$src" ] && [ ! -L "$src" ]; then
+            echo "首次备份 $relpath..."
+            mkdir -p "$(dirname "$dst")"
+            cp -a "$src" "$dst"
+        else
+            continue
+        fi
     fi
 
-    # 如果源路径已经是正确的符号链接，跳过
-    if [ -L "$src" ] && [ "$(readlink "$src")" = "$dst" ]; then
-        echo "✓ $relpath 已正确映射"
-        continue
-    fi
-
-    # 如果源路径存在且不是链接，则需要移动
+    # 如果是目录/文件冲突，则移动到备份区
     if [ -e "$src" ] && [ ! -L "$src" ]; then
-        echo "处理 $relpath ..."
-
-        # 在备份目录中创建对应的父目录
+        echo "处理冲突: $relpath"
         backup_path="$BACKUP_HOME/$relpath"
         mkdir -p "$(dirname "$backup_path")"
-
-        # 尝试移动原文件/目录到备份目录
-        echo "移动 $src -> $backup_path"
-        if ! mv "$src" "$backup_path"; then
-            echo "错误：无法移动 $src 到 $backup_path" >&2
-            echo "可能原因：有进程正在使用该文件/目录（例如 vscode-server）。" >&2
-            echo "请手动终止占用进程后重新运行此脚本。" >&2
-            exit 1
-        fi
-    elif [ -L "$src" ]; then
-        # 如果是错误的链接，直接删除
-        echo "删除错误的符号链接 $src"
+        mv "$src" "$backup_path"
+    elif [ -L "$src" ] && [ "$(readlink "$src")" != "$dst" ]; then
         rm "$src"
     fi
 
-    # 创建新的符号链接（确保父目录存在）
-    mkdir -p "$(dirname "$src")"
-    echo "创建链接: $src -> $dst"
-    ln -s "$dst" "$src"
-
-    # 修复链接本身的权限
-    sudo chown -h developer:developer "$src"
+    # 创建软链接
+    if [ ! -L "$src" ]; then
+        mkdir -p "$(dirname "$src")"
+        ln -s "$dst" "$src"
+        sudo chown -h $CURRENT_USER:$CURRENT_GROUP "$src"
+    fi
 done
 
-echo "家目录映射初始化完成。"
-
+echo "✨ 环境初始化完成。所有配置已同步且权限已校验。"

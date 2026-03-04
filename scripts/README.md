@@ -6,8 +6,7 @@
 
 | 脚本名称 | 功能描述 | 使用场景 | 依赖 | 详细说明 |
 |---------|---------|---------|------|---------|
-| backup_home.sh | 首次备份容器家目录到持久化存储 | 首次运行容器后，手动执行一次备份 | bash, cp | 首次备份家目录，支持排除列表 |
-| init_home.sh | 容器启动时初始化 home 目录软链接 | 容器重启后恢复持久化配置 | bash, ln, chown | 创建软链接到持久化存储 |
+| init_home.sh | 容器启动时初始化 home 目录软链接 | 容器重启后恢复持久化配置 | bash, ln, chown | [创建软链接到持久化存储](../guide/enviroment/home_persistence.md) |
 | install_node.sh | Node.js 自动安装 | 安装或升级 Node.js 环境 | curl, bash | 支持中国镜像，使用 nvm 安装 |
 | install_tilelang.sh | TileLang 安装 | 一键安装 TileLang 开发环境 | git, bash | 自动配置 GitHub 镜像加速 |
 | opencode_apikey_config.sh | OpenCode API Key 配置 | 配置 OpenCode 的 API Key 和模型端点 | bash | 交互式输入配置 |
@@ -38,18 +37,6 @@ sudo bash scripts/init_home.sh
 ```
 
 ### 单独使用脚本
-
-#### backup_home.sh
-
-```bash
-# 首次备份家目录
-sudo bash scripts/backup_home.sh
-
-# 备份前需要修改脚本中的配置：
-# SOURCE_HOME="/home/developer"        # 源家目录
-# TARGET_HOME="/mnt/workspace/home"      # 目标持久化目录
-# EXCLUDE_LIST=("Ascend" "ascend")      # 排除列表
-```
 
 #### init_home.sh
 

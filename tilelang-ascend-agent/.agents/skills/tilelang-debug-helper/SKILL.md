@@ -215,7 +215,6 @@ Create or merge `.vscode/launch.json` with the following configurations:
       "name": "Step 2: Attach C++ (GDB)",
       "type": "cppdbg",
       "request": "attach",
-      "program": "${command:pickETSProcess}",
       "processId": "${command:pickProcess}",
       "MIMode": "gdb",
       "setupCommands": [
@@ -255,7 +254,11 @@ Create or merge `.vscode/tasks.json` with the following task:
     {
       "label": "set env",
       "type": "shell",
-      "command": "source <path_to_set_env.sh> && env > ${workspaceFolder}/.env",
+      "command": "bash",
+      "args": [
+        "-c",
+        "source <path_to_set_env.sh> && env > ${workspaceFolder}/.env"
+      ],
       "problemMatcher": []
     }
   ]
