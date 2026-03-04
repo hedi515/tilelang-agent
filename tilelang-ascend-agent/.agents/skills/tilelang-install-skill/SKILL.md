@@ -118,7 +118,8 @@ Ask the user if they want to execute the TileLang installation script located at
 If the user confirms, run the script without monitoring output:
 
 ```bash
-bash tilelang-ascend/install_ascend.sh
+chmod +x tilelang-ascend/install_ascend.sh
+./tilelang-ascend/install_ascend.sh &
 ```
 
 The script will:
