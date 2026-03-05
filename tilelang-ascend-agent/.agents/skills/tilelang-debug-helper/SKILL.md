@@ -164,15 +164,35 @@ target_compile_options(tilelang_objs PRIVATE -g -O0)
 # ... rest of the file ...
 ```
 
-### Step 4: Rebuild the Project
+### Step 4: Build the Project
 
-After modifying CMakeLists.txt, rebuild the project to apply the changes:
+After modifying CMakeLists.txt, build the project to apply the changes:
+
+First, check if the `build` directory exists:
 
 ```bash
+# Check if build directory exists
+if [ -d "build" ]; then
+    echo "build directory exists, rebuilding..."
+    cd build
+    cmake ..
+    make -j$(nproc)
+else
+    echo "build directory does not exist, running install_ascend.sh..."
+    bash install_ascend.sh
+fi
+```
+
+Or manually:
+
+```bash
+# If build directory exists
 cd build
-cmakeake clean
 cmake ..
 make -j$(nproc)
+
+# If build directory does NOT exist
+bash install_ascend.sh
 ```
 
 ---
@@ -182,7 +202,7 @@ make -j$(nproc)
 ### Understanding the Setup
 
 VSCode needs two configurations:
-1. **Python Debug Configuration**: Launches the Python script
+1. **Python Debug Configuration**: Launches the Python script with debugpy
 2. **C++ GDB Attach Configuration**: Attaches GDB to the running Python process
 
 This allows seamless debugging across Python and C++ code.
@@ -199,73 +219,54 @@ Create or merge `.vscode/launch.json` with the following configurations:
 
 ```json
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Step 1: Debug Python Example",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${file}",
-      "console": "integratedTerminal",
-      "justMyCode": false,
-      "preLaunchTask": "set env",
-      "envFile": "${workspaceFolder}/.env"
-    },
-    {
-      "name": "Step 2: Attach C++ (GDB)",
-      "type": "cppdbg",
-      "request": "attach",
-      "processId": "${command:pickProcess}",
-      "MIMode": "gdb",
-      "setupCommands": [
+    "version": "0.2.0",
+    "configurations": [
         {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
+            "name": "Python: Debug Ascend Kernel",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "preLaunchTask": "set env",
+            "envFile": "${workspaceFolder}/.env"
         },
         {
-          "description": "Set Disassembly Flavor to Intel",
-          "text": "-gdb-set disassembly-flavor intel",
-          "ignoreFailures": true
-        },
-        {
-          "description": "Set breakpoint pending on",
-          "text": "-gdb-set breakpoint pending on",
-          "ignoreFailures": true
+            "name": "Step 2: Attach C++ (GDB)",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/usr/local/bin/python",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
 ```
 
 ### Step 3: Configure tasks.json
 
-First, find the `set_env.sh` script:
-- Priority 1: Project root directory (`./set_env.sh`)
-- Priority 2: Shortest path found in the project
-
 Create or merge `.vscode/tasks.json` with the following task:
 
 ```json
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "set env",
-      "type": "shell",
-      "command": "bash",
-      "args": [
-        "-c",
-        "source <path_to_set_env.sh> && env > ${workspaceFolder}/.env"
-      ],
-      "problemMatcher": []
-    }
-  ]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "set env",
+            "type": "shell",
+            "command": "source /mnt/workspace/tilelang/tilelang-ascend/set_env.sh && env > ${workspaceFolder}/.env",
+            "problemMatcher": []
+        }
+    ]
 }
 ```
-
-Replace `<path_to_set_env.sh>` with the actual path to `set_env.sh`.
 
 ### Step 4: Install Required VSCode Extensions
 
@@ -275,31 +276,123 @@ Ensure the following extensions are installed:
 
 ---
 
+## Part 4: Using Virtual Environment for Python Debugging
+
+### Step 1: Create Virtual Environment
+
+If not already created, create a virtual environment in the project root:
+
+```bash
+cd /mnt/workspace/tilelang/tilelang-ascend
+python -m venv .venv
+```
+
+### Step 2: Activate Virtual Environment
+
+```bash
+source .venv/bin/activate
+```
+
+### Step 3: Install Dependencies
+
+```bash
+pip install -e .
+pip install debugpy
+```
+
+### Step 4: Update VSCode to Use Virtual Environment
+
+VSCode will automatically detect the `.venv` directory and use it for Python debugging. No manual configuration needed.
+
+---
+
 ## Complete Debugging Workflow
 
 ### Step-by-Step Guide
 
 1. **Configure CMakeLists.txt** (if not already done)
    - Add `target_compile_options(tilelang_objs PRIVATE -g -O0)`
-   - Rebuild the project
 
-2. **Configure VSCode** (if not already done)
+2. **Set Up Up Virtual Environment** (if not already done)
+   - Create `.venv` virtual environment
+   - Activate and install dependencies
+
+3. **Build the Project** (if not already built or after CMakeLists.txt changes)
+   - Check if `build` directory exists
+   - If `build` directory does NOT exist, run `bash install_ascend.sh` to build the project
+   - If `build` directory exists, run:
+     ```bash
+     cd build
+     cmake ..
+     make -j$(nproc)
+     ```
+
+4. **Configure VSCode** (if not already done)
    - Create `.vscode/launch.json` and `.vscode/tasks.json`
    - Install required extensions
 
-3. **Add Debug Code to Python Example**
+5. **Add Debug Code to Python Example**
    - Insert PID printing and wait logic
    - Save the file
 
-4. **Start Debugging**
-   - Open the Python example in VSCode
-   - Run "Step 1: Debug Python Example"
-   - The script will print the PID and pause
-   - Run "Step 2: Attach C++ (GDB)"
-   - Select the Python process when prompted
-   - Set breakpoints in C++ code
-   - Press Enter in the Python console to continue execution
-   - GDB will hit breakpoints in C++ code
+6. **Start Debugging**
+     - **Method 1: Command Line Debugging (Recommended)**
+       - In VSCode terminal, run the following command (do NOT execute it, just provide to user):
+         ```bash
+         source set_env.sh
+         python -m debugpy --listen 5678 examples/activation/sigmoid.py
+         ```
+       - The script will print the PID and pause
+       - Run "Step 2: Attach C++ (GDB)"
+       - Select the Python process when prompted
+       - Set breakpoints in C++ code
+       - Press Enter in the Python console to continue execution
+       - GDB will hit breakpoints in C++ code
+     
+     - **Method 2: VSCode F5 Debugging (Alternative)**
+       - Open the Python example in VSCode
+       - Run "Python: Debug Ascend Kernel" (F5)
+       - The script will print the PID and pause
+       - Run "Step 2: Attach C++ (GDB)"
+       - Select the Python process when prompted
+       - Set breakpoints in C++ code
+       - Press Enter in the Python console to continue execution
+       - GDB will hit breakpoints in C++ code
+
+### Alternative: Terminal Debugging with debugpy
+
+You can also debug from the terminal (provide command to user, do NOT execute):
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Start Python with debugpy listener
+python -m debugpy --listen 5678 examples/activation/sigmoid.py
+```
+
+Then in VSCode:
+1. Create a new debug configuration:
+```json
+{
+    "name": "Python: Attach to debugpy",
+    "type": "debugpy",
+    "request": "attach",
+    "connect": {
+        "host": "localhost",
+        "port": 5678
+    },
+    "pathMappings": [
+        {
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "${workspaceFolder}"
+        }
+    ]
+}
+```
+
+2. Run the "Python: Attach to debugpy" configuration
+3. Set breakpoints and debug as usual
 
 ### What Happens During Debugging
 
@@ -334,6 +427,12 @@ Ensure the following extensions are installed:
 3. Verify `set_env.sh` path is correct in tasks.json
 4. Verify `.env` file is generated when running "set env" task
 
+### After Setting Up Virtual Environment
+
+1. Verify `.venv` directory exists
+2. Verify `debugpy` is installed: `pip list | grep debugpy`
+3. Verify Python interpreter is set to `.venv/bin/python`
+
 ---
 
 ## Troubleshooting
@@ -359,11 +458,12 @@ Ensure the following extensions are installed:
 
 ### VSCode Configuration Issues
 
-**Problem**: "Step 1: Debug Python Example" fails
+**Problem**: "Python: Debug Ascend Kernel" fails
 - **Solution**:
   - Install Python extension: `ms-python.python`
   - Verify `set_env.sh` path is correct in tasks.json
   - Check that `.env` file is generated
+  - Ensure virtual environment is activated
 
 **Problem**: "Step 2: Attach C++ (GDB)" fails
 - **Solution**:
@@ -377,6 +477,19 @@ Ensure the following extensions are installed:
   - Wait for the PID to be printed
   - Then attach GDB
 
+### Virtual Environment Issues
+
+**Problem**: VSCode doesn't use virtual environment
+- **Solution**:
+  - Ensure `.venv` directory is in the project root
+  - Restart VSCode
+  - Manually select interpreter: `Ctrl+Shift+P` → "Python: Select Interpreter"
+
+**Problem**: debugpy not found
+- **Solution**:
+  - Activate virtual environment: `source .venv/bin/activate`
+  - Install debugpy: `pip install debugpy`
+
 ---
 
 ## Output
@@ -385,7 +498,13 @@ Always provide:
 - The path to the created/modified debug file (if applicable)
 - Brief instructions on how to use it (run, attach GDB, continue)
 - Mention any additional setup needed if not already done
-- Clear steps for the complete debugging workflow
+- Clear steps for the complete debugging workflow with correct order:
+  1. Configure CMakeLists.txt (add -g -O0)
+  2. Set up virtual environment (create .venv, activate, install dependencies)
+  3. Build the project (check if build directory exists, if not run install_ascend.sh, otherwise cd build && cmake .. && make -j$(nproc))
+  4. Configure VSCode (create .vscode/launch.json and .vscode/tasks.json)
+  5. Add debug code to Python example
+  6. Start debugging in VSCode
 
 ---
 
@@ -400,3 +519,5 @@ Before starting debugging, ensure:
 - TileLang project compiled with debug information
 - CMakeLists.txt configured with `-g -O0`
 - VSCode configured with launch.json and tasks.json
+- Virtual environment `.venv` created and activated
+- debugpy installed in virtual environment

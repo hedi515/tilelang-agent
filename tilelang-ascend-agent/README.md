@@ -9,8 +9,6 @@ tilelang-ascend-agent/
 ├── .agents/              # AI Skills 目录
 │   └── skills/          # 具体技能实现
 │       ├── tilelang-debug-helper/      # 调试辅助
-│       ├── setup-tilelang-agent/      # 安装挂载
-│       ├── tilelang-install-skill/      # TileLang 安装
 │       ├── requesting-code-review/    # 代码审查
 │       └── skill-creator/            # Skill 创建（软链接）
 ├── AGENTS.md             # TileLang-Ascend 项目架构说明
@@ -22,10 +20,8 @@ tilelang-ascend-agent/
 | Skill 名称 | 功能描述 | 使用场景 | 触发关键词 | 使用方法 |
 |-----------|---------|---------|-----------|---------|
 | tilelang-debug-helper | TileLang 调试辅助 | 为 TileLang 示例添加 GDB 调试支持，创建可调试版本 | 调试、GDB、断点、VSCode 调试 | 1. 读取需要调试的示例文件<br/>2. 在合适位置添加调试代码（打印 PID、等待 GDB 附加）<br/>3. 保存调试版本文件 |
-| setup-tilelang-agent | TileLang Agent 安装挂载 | 将 tilelang-agent 挂载到 tilelang-ascend 项目，创建软链接 | 安装、挂载、设置、配置 | 1. 确定安装目录<br/>2. 创建 .agents 和 AGENTS.md 软链接<br/>3. 更新 .gitignore<br/>4. 验证安装 |
-| tilelang-install-skill | TileLang 安装 | 完整的 TileLang 安装流程，包括系统检查、SSH 配置、仓库克隆等 | 安装 TileLang、设置 TileLang、配置 TileLang | 1. 检查系统兼容性<br/>2. 配置 SSH 密钥<br/>3. 克隆仓库<br/>4. 配置镜像加速<br/>5. 更新子模块<br/>6. 执行安装脚本<br/>7. 验证安装 |
 | requesting-code-review | 代码审查 | 自动进行代码质量检查，发现潜在问题 | 完成、实现、审查、review | 1. 获取 git SHA（BASE_SHA、HEAD_SHA）<br/>2. 调用 code-reviewer subagent<br/>3. 根据反馈修复问题 |
-| skill-creator | Skill 创建 | 创建新 Skills，改进现有 Skills，运行评估和性能测试 | 创建 skill、优化 skill、改进 skill | 1. 创建 Skill 目录和 SKILL.md<br/>2. 编写 Skill 内容<br/>3. 测试 Skill<br/>4. 评估和优化 |
+| skill-creator | Skill 创建 | 创建新 Skills，改进现有 Skills，运行评估和性能测试（软链接） | 创建 skill、优化 skill、改进 skill | 1. 创建 Skill 目录和 SKILL.md<br/>2. 编写 Skill 内容<br/>3. 测试 Skill<br/>4. 评估和优化 |
 
 ## 详细说明
 
@@ -54,53 +50,7 @@ tilelang-ascend-agent/
 - 调试版本的文件路径
 - 使用说明（运行、附加 GDB、继续）
 
-### 2. setup-tilelang-agent
-
-**功能**：将 tilelang-agent 挂载到 tilelang-ascend 项目
-
-**使用场景**：
-- 安装 tilelang-agent 到项目
-- 设置自定义 AI agent skills
-- 配置开发环境
-
-**使用方法**：
-1. 确定安装目录（TL_ROOT 环境变量或用户指定）
-2. 创建软链接：
-   - `.agents` → `tilelang-agent/tilelang-agent/.agents`
-   - `AGENTS.md` → `tilelang-agent/tilelang-agent/AGENTS.md`
-3. 更新 `.gitignore` 忽略这些链接
-4. 验证安装成功
-
-**输出**：
-- 安装摘要（路径、链接）
-- 验证结果
-
-### 3. tilelang-install-skill
-
-**功能**：完整的 TileLang 安装流程
-
-**使用场景**：
-- 在 Linux 系统上安装 TileLang
-- 配置 SSH 密钥访问 GitHub
-- 克隆并初始化子模块
-- 执行安装脚本
-
-**使用方法**：
-1. 检查系统兼容性（Linux only）
-2. 配置 SSH 密钥（生成或使用现有密钥）
-3. 克隆 TileLang 仓库
-4. 配置 GitHub 镜像加速
-5. 初始化和更新子模块
-6. 执行 `install_ascend.sh` 脚本
-7. 清理镜像配置
-8. 验证安装
-
-**输出**：
-- 安装进度信息
-- 成功或错误消息
-- 验证结果
-
-### 4. requesting-code-review
+### 2. requesting-code-review
 
 **功能**：自动进行代码质量检查
 
@@ -126,9 +76,9 @@ tilelang-ascend-agent/
 - 发现的问题（Critical/Important/Minor）
 - 评估建议
 
-### 5. skill-creator
+### 3. skill-creator
 
-**功能**：创建和优化 Skills
+**功能**：创建和优化 Skills（软链接）
 
 **使用场景**：
 - 从零创建新 Skill
