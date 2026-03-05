@@ -36,14 +36,16 @@ tilelang-agent/
 │   └── github_repo_stats_prompt.md  # 统计提示词
 ├── .agents/                   # 通用 AI Skills
 │   └── skills/
-│       └── skill-creator/     # Skill 创建工具
+│       ├── README.md            # Skills 说明文档
+│       ├── setup-tilelang-agent/  # TileLang Agent 安装挂载
+│       ├── tilelang-install-skill/ # TileLang 安装
+│       └── skill-creator/        # Skill 创建工具（软链接）
 ├── tilelang-ascend-agent/    # TileLang-Ascend 专用目录
 │   ├── .agents/              # TileLang-Ascend AI Skills
 │   │   └── skills/
 │   │       ├── tilelang-debug-helper/      # 调试辅助
-│   │       ├── setup-tilelang-agent/      # 安装挂载
-│   │       ├── tilelang-install-skill/      # TileLang 安装
-│   │       └── requesting-code-review/    # 代码审查
+│   │       ├── requesting-code-review/    # 代码审查
+│   │       └── skill-creator/            # Skill 创建工具（软链接）
 │   ├── AGENTS.md             # TileLang-Ascend 项目架构说明
 │   └── README.md            # 本目录说明文档
 └── README.md                  # 项目主文档
@@ -66,16 +68,16 @@ tilelang-agent/
 
 提供自定义 AI Skills 增强 OpenCode Agent 能力。详细说明请参考：
 
-- [通用 Skills](.agents/skills/) - 通用技能（如 skill-creator）
+- [通用 Skills](.agents/skills/README.md) - 通用技能
 - [TileLang-Ascend Skills](tilelang-ascend-agent/README.md) - TileLang-Ascend 专用技能
 
-| Skill 类别 | 说明 |
-|-----------|------|
-| tilelang-debug-helper | TileLang 调试辅助，为示例添加 GDB 调试支持 |
-| setup-tilelang-agent | TileLang-Ascend Agent 安装挂载 |
-| tilelang-install-skill | TileLang 安装，包括系统检查、SSH 配置、仓库克隆等 |
-| requesting-code-review | 代码审查，自动进行代码质量检查 |
-| skill-creator | Skill 创建，创建新 Skills，改进现有 Skills |
+| Skill 类别 | 说明 | 位置 |
+|-----------|------|------|
+| setup-tilelang-agent | TileLang Agent 安装挂载 | .agents/skills/ |
+| tilelang-install-skill | TileLang 安装，包括系统检查、SSH 配置、仓库克隆等 | .agents/skills/ |
+| tilelang-debug-helper | TileLang 调试辅助，为示例添加 GDB 调试支持 | tilelang-ascend-agent/.agents/skills/ |
+| requesting-code-review | 代码审查，自动进行代码质量检查 | tilelang-ascend-agent/.agents/skills/ |
+| skill-creator | Skill 创建，创建新 Skills，改进现有 Skills（软链接） | .agents/skills/ |
 
 ## 算力平台使用
 
